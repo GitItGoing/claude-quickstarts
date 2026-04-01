@@ -1,7 +1,7 @@
 # Anthropic Computer Use Demo
 
 > [!NOTE]
-> Now featuring support for the new Claude 4 models! The latest Claude Opus 4.5 (claude-opus-4-5-20251101) is now available, along with Claude Sonnet 4.5 (claude-sonnet-4-5-20250929), Claude Sonnet 4 (claude-sonnet-4-20250514), Claude Opus 4 (claude-opus-4-20250514), and Claude Haiku 4.5 (claude-haiku-4-5-20251001). These models bring next-generation capabilities with the updated str_replace_based_edit_tool that replaces the previous str_replace_editor tool. The undo_edit command has been removed in this latest version for a more streamlined experience.
+> Now featuring support for the latest Claude 4.6 models! Claude Opus 4.6 (claude-opus-4-6) and Claude Sonnet 4.6 (claude-sonnet-4-6) are now available, along with Claude Opus 4.5 (claude-opus-4-5-20251101), Claude Sonnet 4.5 (claude-sonnet-4-5-20250929), and Claude Haiku 4.5 (claude-haiku-4-5-20251001). These models bring next-generation capabilities with the updated str_replace_based_edit_tool that replaces the previous str_replace_editor tool. The undo_edit command has been removed in this latest version for a more streamlined experience.
 
 > [!CAUTION]
 > Computer use is a beta feature. Please be aware that computer use poses unique risks that are distinct from standard API features or chat interfaces. These risks are heightened when using computer use to interact with the internet. To minimize risks, consider taking precautions such as:
@@ -18,7 +18,7 @@
 This repository helps you get started with computer use on Claude, with reference implementations of:
 
 - Build files to create a Docker container with all necessary dependencies
-- A computer use agent loop using the Claude API, Bedrock, or Vertex to access Claude Opus 4.5, Claude Sonnet 4.5, Claude Sonnet 4, Claude Opus 4, Claude Haiku 4.5, Claude 3.7 Sonnet, and Claude 3.5 Sonnet models
+- A computer use agent loop using the Claude API, Bedrock, or Vertex to access Claude Opus 4.6, Claude Sonnet 4.6, Claude Opus 4.5, Claude Sonnet 4.5, and Claude Haiku 4.5 models
 - Anthropic-defined computer use tools
 - A streamlit app for interacting with the agent loop
 
@@ -54,7 +54,7 @@ Once the container is running, see the [Accessing the demo app](#accessing-the-d
 ### Bedrock
 
 > [!TIP]
-> To use the new Claude 3.7 Sonnet on Bedrock, you first need to [request model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html).
+> To use Claude models on Bedrock, you first need to [request model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access-modify.html).
 
 You'll need to pass in AWS credentials with appropriate permissions to use Claude on Bedrock.
 You have a few options for authenticating with Bedrock. See the [boto3 documentation](https://boto3.amazonaws.com/v1/documentation/api/latest/guide/credentials.html#environment-variables) for more details and options.

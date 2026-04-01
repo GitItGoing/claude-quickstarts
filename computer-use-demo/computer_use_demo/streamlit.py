@@ -32,9 +32,9 @@ from computer_use_demo.loop import (
 from computer_use_demo.tools import ToolResult, ToolVersion
 
 PROVIDER_TO_DEFAULT_MODEL_NAME: dict[APIProvider, str] = {
-    APIProvider.ANTHROPIC: "claude-sonnet-4-5-20250929",
-    APIProvider.BEDROCK: "anthropic.claude-3-5-sonnet-20241022-v2:0",
-    APIProvider.VERTEX: "claude-3-5-sonnet-v2@20241022",
+    APIProvider.ANTHROPIC: "claude-sonnet-4-6",
+    APIProvider.BEDROCK: "anthropic.claude-sonnet-4-6-v1:0",
+    APIProvider.VERTEX: "claude-sonnet-4-6@latest",
 }
 
 
@@ -60,6 +60,13 @@ CLAUDE_4_5 = ModelConfig(
     has_thinking=True,
 )
 
+CLAUDE_4_6 = ModelConfig(
+    tool_version="computer_use_20251124",
+    max_output_tokens=128_000,
+    default_output_tokens=1024 * 16,
+    has_thinking=True,
+)
+
 CLAUDE_4_WITH_ZOOMABLE_TOOL = ModelConfig(
     tool_version="computer_use_20251124",
     max_output_tokens=64_000,
@@ -75,16 +82,25 @@ HAIKU_4_5 = ModelConfig(
 )
 
 MODEL_TO_MODEL_CONF: dict[str, ModelConfig] = {
-    "claude-opus-4-1-20250805": CLAUDE_4,
-    "claude-sonnet-4-20250514": CLAUDE_4,
-    "claude-opus-4-20250514": CLAUDE_4,
+    # Claude 4.6
+    "claude-opus-4-6": CLAUDE_4_6,
+    "anthropic.claude-opus-4-6-v1:0": CLAUDE_4_6,  # Bedrock
+    "claude-opus-4-6@latest": CLAUDE_4_6,  # Vertex
+    "claude-sonnet-4-6": CLAUDE_4_6,
+    "anthropic.claude-sonnet-4-6-v1:0": CLAUDE_4_6,  # Bedrock
+    "claude-sonnet-4-6@latest": CLAUDE_4_6,  # Vertex
+    # Claude 4.5
+    "claude-opus-4-5-20251101": CLAUDE_4_WITH_ZOOMABLE_TOOL,
     "claude-sonnet-4-5-20250929": CLAUDE_4_5,
-    "anthropic.claude-sonnet-4-5-20250929-v1:0": CLAUDE_4_5,
-    "claude-sonnet-4-5@20250929": CLAUDE_4_5,
+    "anthropic.claude-sonnet-4-5-20250929-v1:0": CLAUDE_4_5,  # Bedrock
+    "claude-sonnet-4-5@20250929": CLAUDE_4_5,  # Vertex
     "claude-haiku-4-5-20251001": HAIKU_4_5,
     "anthropic.claude-haiku-4-5-20251001-v1:0": HAIKU_4_5,  # Bedrock
     "claude-haiku-4-5@20251001": HAIKU_4_5,  # Vertex
-    "claude-opus-4-5-20251101": CLAUDE_4_WITH_ZOOMABLE_TOOL,
+    # Claude 4
+    "claude-opus-4-1-20250805": CLAUDE_4,
+    "claude-sonnet-4-20250514": CLAUDE_4,
+    "claude-opus-4-20250514": CLAUDE_4,
 }
 
 CONFIG_DIR = PosixPath("~/.anthropic").expanduser()
