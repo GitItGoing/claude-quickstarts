@@ -190,7 +190,10 @@ async def sampling_loop(
         elif provider == APIProvider.VERTEX:
             client = AnthropicVertex()
         elif provider == APIProvider.BEDROCK:
-            client = _create_bedrock_client()
+            # Cache the client to avoid repeated STS calls for bearer token auth
+            if not hasattr(sampling_loop, "_bedrock_client"):
+                sampling_loop._bedrock_client = _create_bedrock_client()  # type: ignore[attr-defined]
+            client = sampling_loop._bedrock_client  # type: ignore[attr-defined]
 
         if enable_prompt_caching:
             betas.append(PROMPT_CACHING_BETA_FLAG)
