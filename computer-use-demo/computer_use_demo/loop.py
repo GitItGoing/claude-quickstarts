@@ -42,6 +42,8 @@ PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
 logger = logging.getLogger(__name__)
 
+_cached_bearer_token_client: AnthropicBedrock | None = None
+
 
 def _create_bedrock_client() -> AnthropicBedrock:
     """Create a Bedrock client, supporting bearer token auth via web identity.
@@ -54,6 +56,10 @@ def _create_bedrock_client() -> AnthropicBedrock:
     role_arn = os.environ.get("AWS_ROLE_ARN")
 
     if bearer_token and role_arn:
+        global _cached_bearer_token_client
+        if _cached_bearer_token_client is not None:
+            return _cached_bearer_token_client
+
         import boto3
         from botocore.exceptions import ClientError
 
@@ -101,12 +107,13 @@ def _create_bedrock_client() -> AnthropicBedrock:
             creds.get("Expiration", "unknown"),
         )
 
-        return AnthropicBedrock(
+        _cached_bearer_token_client = AnthropicBedrock(
             aws_access_key=creds["AccessKeyId"],
             aws_secret_key=creds["SecretAccessKey"],
             aws_session_token=creds["SessionToken"],
             aws_region=region,
         )
+        return _cached_bearer_token_client
 
     if bearer_token and not role_arn:
         logger.warning(
@@ -190,10 +197,7 @@ async def sampling_loop(
         elif provider == APIProvider.VERTEX:
             client = AnthropicVertex()
         elif provider == APIProvider.BEDROCK:
-            # Cache the client to avoid repeated STS calls for bearer token auth
-            if not hasattr(sampling_loop, "_bedrock_client"):
-                sampling_loop._bedrock_client = _create_bedrock_client()  # type: ignore[attr-defined]
-            client = sampling_loop._bedrock_client  # type: ignore[attr-defined]
+            client = _create_bedrock_client()
 
         if enable_prompt_caching:
             betas.append(PROMPT_CACHING_BETA_FLAG)

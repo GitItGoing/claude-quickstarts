@@ -1,7 +1,7 @@
 # Anthropic Computer Use Demo
 
 > [!NOTE]
-> Now featuring support for the latest Claude 4.6 models! Claude Opus 4.6 (claude-opus-4-6) and Claude Sonnet 4.6 (claude-sonnet-4-6) are now available, along with Claude Opus 4.5 (claude-opus-4-5-20251101), Claude Sonnet 4.5 (claude-sonnet-4-5-20250929), and Claude Haiku 4.5 (claude-haiku-4-5-20251001). These models bring next-generation capabilities with the updated str_replace_based_edit_tool that replaces the previous str_replace_editor tool. The undo_edit command has been removed in this latest version for a more streamlined experience.
+> Now featuring support for the latest Claude 4.6 models! Claude Opus 4.6 (claude-opus-4-6) and Claude Sonnet 4.6 (claude-sonnet-4-6) are available via the Anthropic API. For Bedrock and Vertex, Claude Opus 4.5 (claude-opus-4-5-20251101), Claude Sonnet 4.5 (claude-sonnet-4-5-20250929), and Claude Haiku 4.5 (claude-haiku-4-5-20251001) are the latest available models — Claude 4.6 Bedrock/Vertex model IDs will be added when published. All models use the updated str_replace_based_edit_tool that replaces the previous str_replace_editor tool. The undo_edit command has been removed in this latest version for a more streamlined experience.
 
 > [!CAUTION]
 > Computer use is a beta feature. Please be aware that computer use poses unique risks that are distinct from standard API features or chat interfaces. These risks are heightened when using computer use to interact with the internet. To minimize risks, consider taking precautions such as:
