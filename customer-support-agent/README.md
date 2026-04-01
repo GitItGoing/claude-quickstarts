@@ -159,8 +159,9 @@ This project supports multiple Claude models. To switch between models:
 
 ```typescript
 const models: Model[] = [
-  { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku" },
-  { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet" },
+  { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
+  { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
+  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5" },
   // Add more models as needed
 ];
 ```
@@ -168,7 +169,7 @@ const models: Model[] = [
 2. The `selectedModel` state variable controls the currently selected model:
 
 ```typescript
-const [selectedModel, setSelectedModel] = useState("claude-3-haiku-20240307");
+const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-6");
 ```
 
 3. To implement model switching in the UI, a dropdown component is used that updates the `selectedModel`.
