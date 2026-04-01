@@ -26,40 +26,8 @@ Create a `.env.local` file in the root directory with the following variables:
 
 ```
 ANTHROPIC_API_KEY=your_anthropic_api_key
-```
-
-Then configure AWS authentication using **one** of the following options:
-
-### Option 1: Bearer Token (recommended for IAM Identity Center / SSO / OIDC)
-
-```
-BAWS_BEARER_TOKEN=your_aws_bearer_token
-BAWS_ROLE_ARN=arn:aws:iam::123456789012:role/your-bedrock-role
-```
-
-The bearer token (web identity token) is exchanged for temporary credentials via AWS STS `AssumeRoleWithWebIdentity`. The role must have a trust policy that allows the identity provider, and must have Bedrock permissions attached. Optionally set `BAWS_ROLE_SESSION_NAME` to customize the session name.
-
-### Option 2: Static Credentials (access key + secret key)
-
-```
 BAWS_ACCESS_KEY_ID=your_aws_access_key
 BAWS_SECRET_ACCESS_KEY=your_aws_secret_key
-```
-
-For temporary credentials (e.g. from STS AssumeRole), also add:
-
-```
-BAWS_SESSION_TOKEN=your_aws_session_token
-```
-
-### Option 3: Default Credential Provider Chain
-
-If none of the above environment variables are set, the application falls back to the [AWS default credential provider chain](https://docs.aws.amazon.com/sdkref/latest/guide/standardized-credentials.html), which automatically resolves credentials from IAM roles, environment variables (`AWS_ACCESS_KEY_ID`, etc.), SSO, config files, and instance metadata.
-
-### Optional: Custom Region
-
-```
-BAWS_REGION=us-east-1
 ```
 
 Note: We are adding a 'B' in front of the AWS environment variables for a reason that will be discussed later in the deployment section.
@@ -73,16 +41,7 @@ Note: We are adding a 'B' in front of the AWS environment variables for a reason
 3. Click on "Get API keys"
 4. Copy the key and paste it into your `.env.local` file
 
-### AWS Bearer Token (Option 1)
-
-If you are using AWS IAM Identity Center (SSO) or an OIDC identity provider, you can authenticate using a bearer token:
-
-1. Configure an identity provider (IAM Identity Center, Cognito, or external OIDC provider) in your AWS account
-2. Create an IAM role with a trust policy allowing `sts:AssumeRoleWithWebIdentity` from your identity provider, and attach the `AmazonBedrockFullAccess` policy
-3. Obtain a bearer token (web identity token) through your identity provider's authentication flow
-4. Set `BAWS_BEARER_TOKEN` and `BAWS_ROLE_ARN` in your `.env.local` file
-
-### AWS Access Key and Secret Key (Option 2)
+### AWS Access Key and Secret Key
 
 Follow these steps to obtain your AWS credentials:
 
@@ -103,8 +62,6 @@ Follow these steps to obtain your AWS credentials:
 9. You will now see the Access Key ID and Secret Access Key displayed. Note that these keys are only visible once during creation, so be sure to save them securely.
    ![Access Keys](tutorial/access-keys.png)
 8. Copy these keys and paste them into your `.env.local` file
-
-For temporary credentials from AWS STS (e.g. AssumeRole), also add the session token to your `.env.local` file.
 
 Note: Make sure to keep your keys secure and never share them publicly.
 
@@ -159,9 +116,8 @@ This project supports multiple Claude models. To switch between models:
 
 ```typescript
 const models: Model[] = [
-  { id: "claude-opus-4-6", name: "Claude Opus 4.6" },
-  { id: "claude-sonnet-4-6", name: "Claude Sonnet 4.6" },
-  { id: "claude-haiku-4-5-20251001", name: "Claude Haiku 4.5" },
+  { id: "claude-3-haiku-20240307", name: "Claude 3 Haiku" },
+  { id: "claude-3-5-sonnet-20240620", name: "Claude 3.5 Sonnet" },
   // Add more models as needed
 ];
 ```
@@ -169,7 +125,7 @@ const models: Model[] = [
 2. The `selectedModel` state variable controls the currently selected model:
 
 ```typescript
-const [selectedModel, setSelectedModel] = useState("claude-sonnet-4-6");
+const [selectedModel, setSelectedModel] = useState("claude-3-haiku-20240307");
 ```
 
 3. To implement model switching in the UI, a dropdown component is used that updates the `selectedModel`.
@@ -224,9 +180,6 @@ To deploy this application using AWS Amplify, follow these steps:
            - echo "KNOWLEDGE_BASE_ID=$KNOWLEDGE_BASE_ID" >> .env
            - echo "BAWS_ACCESS_KEY_ID=$BAWS_ACCESS_KEY_ID" >> .env
            - echo "BAWS_SECRET_ACCESS_KEY=$BAWS_SECRET_ACCESS_KEY" >> .env
-           - echo "BAWS_SESSION_TOKEN=$BAWS_SESSION_TOKEN" >> .env
-           - echo "BAWS_BEARER_TOKEN=$BAWS_BEARER_TOKEN" >> .env
-           - echo "BAWS_REGION=$BAWS_REGION" >> .env
      artifacts:
        baseDirectory: .next
        files:
@@ -238,24 +191,13 @@ To deploy this application using AWS Amplify, follow these steps:
    ```
 
 6. Choose to create a new service role or use an existing one. Refer to the "Service Role" section for more information.
-7. Click on "Advanced settings" and add your environmental variables. Use **one** of the following authentication options:
+7. Click on "Advanced settings" and add your environmental variables:
 
-   **Bearer Token auth:**
-   ```
-   ANTHROPIC_API_KEY=your_anthropic_api_key
-   BAWS_BEARER_TOKEN=your_aws_bearer_token
-   BAWS_ROLE_ARN=arn:aws:iam::123456789012:role/your-bedrock-role
-   ```
-
-   **Static credentials auth:**
    ```
    ANTHROPIC_API_KEY=your_anthropic_api_key
    BAWS_ACCESS_KEY_ID=your_aws_access_key
    BAWS_SECRET_ACCESS_KEY=your_aws_secret_key
    ```
-
-   Optionally add `BAWS_SESSION_TOKEN` for temporary credentials, or `BAWS_REGION` to override the default region (us-east-1).
-
    The reason we are adding a 'B' in front of the keys here is because AWS doesn't allow keys in Amplify to start with "AWS".
 
 8. Click "Save and deploy" to start the deployment process.
