@@ -100,17 +100,15 @@ docker run \
 
 Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
 
-#### Option 3: Use a bearer token (web identity / OIDC)
+#### Option 3: Use a Bedrock API key (bearer token)
 
-If you have a bearer token from an identity provider (e.g. IAM Identity Center, Cognito, or an external OIDC provider), you can use it to authenticate via STS `AssumeRoleWithWebIdentity`. The role must have a trust policy allowing your identity provider and must have Bedrock permissions attached.
+Bedrock API keys provide the simplest authentication method — no IAM roles, access keys, or STS exchange needed. You can generate a Bedrock API key from the [AWS Bedrock console](https://docs.aws.amazon.com/bedrock/latest/userguide/api-keys-generate.html) or programmatically using the [aws-bedrock-token-generator](https://pypi.org/project/aws-bedrock-token-generator/) package.
 
 ```bash
-export AWS_BEARER_TOKEN=%your_bearer_token%
-export AWS_ROLE_ARN=%your_role_arn%
+export AWS_BEARER_TOKEN_BEDROCK=%your_bedrock_api_key%
 docker run \
     -e API_PROVIDER=bedrock \
-    -e AWS_BEARER_TOKEN=$AWS_BEARER_TOKEN \
-    -e AWS_ROLE_ARN=$AWS_ROLE_ARN \
+    -e AWS_BEARER_TOKEN_BEDROCK=$AWS_BEARER_TOKEN_BEDROCK \
     -e AWS_REGION=us-west-2 \
     -v $HOME/.anthropic:/home/computeruse/.anthropic \
     -p 5900:5900 \
@@ -120,7 +118,8 @@ docker run \
     -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
 ```
 
-You can optionally set `AWS_ROLE_SESSION_NAME` to customize the session name (defaults to `computer-use-demo`).
+> [!TIP]
+> This is the same `AWS_BEARER_TOKEN_BEDROCK` env var used by Claude Code. Short-term API keys (up to 12 hours) are recommended over long-term keys for production use.
 
 Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
 

@@ -42,90 +42,30 @@ PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
 logger = logging.getLogger(__name__)
 
-_cached_bearer_token_client: AnthropicBedrock | None = None
-
 
 def _create_bedrock_client() -> AnthropicBedrock:
-    """Create a Bedrock client, supporting bearer token auth via web identity.
+    """Create a Bedrock client with support for bearer token (API key) auth.
 
-    If AWS_BEARER_TOKEN and AWS_ROLE_ARN are set, exchanges the token for
-    temporary credentials via STS AssumeRoleWithWebIdentity. Otherwise falls back
-    to the default boto3 credential chain (env vars, profiles, IAM roles, etc.).
+    Authentication is resolved in this order:
+    1. AWS_BEARER_TOKEN_BEDROCK — Bedrock API key, passed as a bearer token.
+       boto3 auto-detects this env var and uses it instead of SigV4 signing.
+       This is the simplest auth method, matching Claude Code's behavior.
+    2. Default boto3 credential chain — env vars (AWS_ACCESS_KEY_ID, etc.),
+       AWS profiles, IAM roles, SSO, config files, instance metadata.
     """
-    bearer_token = os.environ.get("AWS_BEARER_TOKEN")
-    role_arn = os.environ.get("AWS_ROLE_ARN")
+    bearer_token = os.environ.get("AWS_BEARER_TOKEN_BEDROCK")
 
-    if bearer_token and role_arn:
-        global _cached_bearer_token_client
-        if _cached_bearer_token_client is not None:
-            return _cached_bearer_token_client
-
-        import boto3
-        from botocore.exceptions import ClientError
-
+    if bearer_token:
         logger.info(
-            "AWS_BEARER_TOKEN and AWS_ROLE_ARN are set, "
-            "attempting AssumeRoleWithWebIdentity"
+            "AWS_BEARER_TOKEN_BEDROCK is set, using Bedrock API key "
+            "bearer token authentication"
         )
-        session_name = os.environ.get(
-            "AWS_ROLE_SESSION_NAME", "computer-use-demo"
-        )
-        region = os.environ.get("AWS_REGION", "us-west-2")
+        # boto3 auto-detects AWS_BEARER_TOKEN_BEDROCK from the environment
+        # and sends it as Authorization: Bearer <token> instead of SigV4.
+        # Just create the client normally — no STS exchange needed.
+        return AnthropicBedrock()
 
-        try:
-            session = boto3.Session()
-            sts_client = session.client("sts", region_name=region)
-            response = sts_client.assume_role_with_web_identity(
-                RoleArn=role_arn,
-                RoleSessionName=session_name,
-                WebIdentityToken=bearer_token,
-            )
-        except ClientError as e:
-            error_code = e.response["Error"]["Code"]
-            error_msg = e.response["Error"]["Message"]
-            logger.error(
-                "Bearer token auth failed: STS AssumeRoleWithWebIdentity "
-                "returned %s: %s (RoleArn=%s, SessionName=%s)",
-                error_code,
-                error_msg,
-                role_arn,
-                session_name,
-            )
-            raise
-        except Exception as e:
-            logger.error(
-                "Bearer token auth failed: unexpected error calling STS: %s: %s",
-                type(e).__name__,
-                e,
-            )
-            raise
-
-        creds = response["Credentials"]
-        logger.info(
-            "Bearer token auth successful, temporary credentials obtained "
-            "(expires %s)",
-            creds.get("Expiration", "unknown"),
-        )
-
-        _cached_bearer_token_client = AnthropicBedrock(
-            aws_access_key=creds["AccessKeyId"],
-            aws_secret_key=creds["SecretAccessKey"],
-            aws_session_token=creds["SessionToken"],
-            aws_region=region,
-        )
-        return _cached_bearer_token_client
-
-    if bearer_token and not role_arn:
-        logger.warning(
-            "AWS_BEARER_TOKEN is set but AWS_ROLE_ARN is missing — "
-            "bearer token auth requires both. Falling back to default credentials."
-        )
-    elif role_arn and not bearer_token:
-        logger.warning(
-            "AWS_ROLE_ARN is set but AWS_BEARER_TOKEN is missing — "
-            "bearer token auth requires both. Falling back to default credentials."
-        )
-
+    logger.info("Using default AWS credential chain for Bedrock authentication")
     return AnthropicBedrock()
 
 

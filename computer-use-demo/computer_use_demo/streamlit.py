@@ -231,20 +231,9 @@ async def main():
             )
 
         if st.session_state.provider == APIProvider.BEDROCK:
-            has_bearer = bool(
-                os.environ.get("AWS_BEARER_TOKEN")
-                and os.environ.get("AWS_ROLE_ARN")
-            )
-            has_static_creds = bool(
-                os.environ.get("AWS_ACCESS_KEY_ID")
-                or os.environ.get("AWS_PROFILE")
-            )
-            if has_bearer:
-                st.success(
-                    "Using bearer token auth "
-                    f"(role: {os.environ.get('AWS_ROLE_ARN', '')[:40]}...)"
-                )
-            elif has_static_creds:
+            if os.environ.get("AWS_BEARER_TOKEN_BEDROCK"):
+                st.success("Using Bedrock API key (bearer token)")
+            elif os.environ.get("AWS_ACCESS_KEY_ID") or os.environ.get("AWS_PROFILE"):
                 st.success("Using AWS credentials from environment")
             else:
                 import boto3
@@ -253,8 +242,9 @@ async def main():
                     st.success("Using AWS credentials from default provider chain")
                 else:
                     st.warning(
-                        "No AWS credentials detected. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, "
-                        "AWS_PROFILE, or AWS_BEARER_TOKEN/AWS_ROLE_ARN."
+                        "No AWS credentials detected. Set AWS_BEARER_TOKEN_BEDROCK "
+                        "(Bedrock API key), or AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, "
+                        "or AWS_PROFILE."
                     )
 
         st.number_input(
@@ -432,11 +422,8 @@ def validate_auth(provider: APIProvider, api_key: str | None):
     if provider == APIProvider.BEDROCK:
         import boto3
 
-        has_bearer_token = os.environ.get("AWS_BEARER_TOKEN") and os.environ.get(
-            "AWS_ROLE_ARN"
-        )
-        if not has_bearer_token and not boto3.Session().get_credentials():
-            return "You must have AWS credentials set up to use the Bedrock API. You can use standard AWS credentials, or set AWS_BEARER_TOKEN and AWS_ROLE_ARN for bearer token auth."
+        if not os.environ.get("AWS_BEARER_TOKEN_BEDROCK") and not boto3.Session().get_credentials():
+            return "You must have AWS credentials set up to use the Bedrock API. Set AWS_BEARER_TOKEN_BEDROCK (Bedrock API key) or configure standard AWS credentials."
     if provider == APIProvider.VERTEX:
         import google.auth
         from google.auth.exceptions import DefaultCredentialsError
