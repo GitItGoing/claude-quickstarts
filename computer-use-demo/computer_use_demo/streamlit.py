@@ -230,6 +230,33 @@ async def main():
                 on_change=lambda: save_to_storage("api_key", st.session_state.api_key),
             )
 
+        if st.session_state.provider == APIProvider.BEDROCK:
+            has_bearer = bool(
+                os.environ.get("AWS_BEARER_TOKEN")
+                and os.environ.get("AWS_ROLE_ARN")
+            )
+            has_static_creds = bool(
+                os.environ.get("AWS_ACCESS_KEY_ID")
+                or os.environ.get("AWS_PROFILE")
+            )
+            if has_bearer:
+                st.success(
+                    "Using bearer token auth "
+                    f"(role: {os.environ.get('AWS_ROLE_ARN', '')[:40]}...)"
+                )
+            elif has_static_creds:
+                st.success("Using AWS credentials from environment")
+            else:
+                import boto3
+
+                if boto3.Session().get_credentials():
+                    st.success("Using AWS credentials from default provider chain")
+                else:
+                    st.warning(
+                        "No AWS credentials detected. Set AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY, "
+                        "AWS_PROFILE, or AWS_BEARER_TOKEN/AWS_ROLE_ARN."
+                    )
+
         st.number_input(
             "Only send N most recent images",
             min_value=0,
