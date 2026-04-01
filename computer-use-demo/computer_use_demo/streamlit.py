@@ -405,8 +405,11 @@ def validate_auth(provider: APIProvider, api_key: str | None):
     if provider == APIProvider.BEDROCK:
         import boto3
 
-        if not boto3.Session().get_credentials():
-            return "You must have AWS credentials set up to use the Bedrock API."
+        has_bearer_token = os.environ.get("AWS_BEARER_TOKEN") and os.environ.get(
+            "AWS_ROLE_ARN"
+        )
+        if not has_bearer_token and not boto3.Session().get_credentials():
+            return "You must have AWS credentials set up to use the Bedrock API. You can use standard AWS credentials, or set AWS_BEARER_TOKEN and AWS_ROLE_ARN for bearer token auth."
     if provider == APIProvider.VERTEX:
         import google.auth
         from google.auth.exceptions import DefaultCredentialsError

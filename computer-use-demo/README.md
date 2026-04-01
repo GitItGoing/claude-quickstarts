@@ -100,6 +100,30 @@ docker run \
 
 Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
 
+#### Option 3: Use a bearer token (web identity / OIDC)
+
+If you have a bearer token from an identity provider (e.g. IAM Identity Center, Cognito, or an external OIDC provider), you can use it to authenticate via STS `AssumeRoleWithWebIdentity`. The role must have a trust policy allowing your identity provider and must have Bedrock permissions attached.
+
+```bash
+export AWS_BEARER_TOKEN=%your_bearer_token%
+export AWS_ROLE_ARN=%your_role_arn%
+docker run \
+    -e API_PROVIDER=bedrock \
+    -e AWS_BEARER_TOKEN=$AWS_BEARER_TOKEN \
+    -e AWS_ROLE_ARN=$AWS_ROLE_ARN \
+    -e AWS_REGION=us-west-2 \
+    -v $HOME/.anthropic:/home/computeruse/.anthropic \
+    -p 5900:5900 \
+    -p 8501:8501 \
+    -p 6080:6080 \
+    -p 8080:8080 \
+    -it ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
+```
+
+You can optionally set `AWS_ROLE_SESSION_NAME` to customize the session name (defaults to `computer-use-demo`).
+
+Once the container is running, see the [Accessing the demo app](#accessing-the-demo-app) section below for instructions on how to connect to the interface.
+
 ### Vertex
 
 You'll need to pass in Google Cloud credentials with appropriate permissions to use Claude on Vertex.

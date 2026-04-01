@@ -2,6 +2,7 @@
 Agentic sampling loop that calls the Claude API and local implementation of anthropic-defined computer use tools.
 """
 
+import os
 import platform
 from collections.abc import Callable
 from datetime import datetime
@@ -37,6 +38,40 @@ from .tools import (
 )
 
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
+
+
+def _create_bedrock_client() -> AnthropicBedrock:
+    """Create a Bedrock client, supporting bearer token auth via web identity.
+
+    If AWS_BEARER_TOKEN and AWS_ROLE_ARN are set, writes the token to a temp file
+    and configures boto3 to use AssumeRoleWithWebIdentity. Otherwise falls back to
+    the default boto3 credential chain (env vars, profiles, IAM roles, etc.).
+    """
+    bearer_token = os.environ.get("AWS_BEARER_TOKEN")
+    role_arn = os.environ.get("AWS_ROLE_ARN")
+
+    if bearer_token and role_arn:
+        import boto3
+
+        session = boto3.Session()
+        client = session.client("sts")
+        response = client.assume_role_with_web_identity(
+            RoleArn=role_arn,
+            RoleSessionName=os.environ.get(
+                "AWS_ROLE_SESSION_NAME", "computer-use-demo"
+            ),
+            WebIdentityToken=bearer_token,
+        )
+        creds = response["Credentials"]
+
+        return AnthropicBedrock(
+            aws_access_key=creds["AccessKeyId"],
+            aws_secret_key=creds["SecretAccessKey"],
+            aws_session_token=creds["SessionToken"],
+            aws_region=os.environ.get("AWS_REGION", "us-west-2"),
+        )
+
+    return AnthropicBedrock()
 
 
 class APIProvider(StrEnum):
@@ -107,7 +142,7 @@ async def sampling_loop(
         elif provider == APIProvider.VERTEX:
             client = AnthropicVertex()
         elif provider == APIProvider.BEDROCK:
-            client = AnthropicBedrock()
+            client = _create_bedrock_client()
 
         if enable_prompt_caching:
             betas.append(PROMPT_CACHING_BETA_FLAG)
