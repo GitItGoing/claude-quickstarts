@@ -2,6 +2,7 @@
 Agentic sampling loop that calls the Claude API and local implementation of anthropic-defined computer use tools.
 """
 
+import logging
 import os
 import platform
 from collections.abc import Callable
@@ -39,36 +40,83 @@ from .tools import (
 
 PROMPT_CACHING_BETA_FLAG = "prompt-caching-2024-07-31"
 
+logger = logging.getLogger(__name__)
+
 
 def _create_bedrock_client() -> AnthropicBedrock:
     """Create a Bedrock client, supporting bearer token auth via web identity.
 
-    If AWS_BEARER_TOKEN and AWS_ROLE_ARN are set, writes the token to a temp file
-    and configures boto3 to use AssumeRoleWithWebIdentity. Otherwise falls back to
-    the default boto3 credential chain (env vars, profiles, IAM roles, etc.).
+    If AWS_BEARER_TOKEN and AWS_ROLE_ARN are set, exchanges the token for
+    temporary credentials via STS AssumeRoleWithWebIdentity. Otherwise falls back
+    to the default boto3 credential chain (env vars, profiles, IAM roles, etc.).
     """
     bearer_token = os.environ.get("AWS_BEARER_TOKEN")
     role_arn = os.environ.get("AWS_ROLE_ARN")
 
     if bearer_token and role_arn:
         import boto3
+        from botocore.exceptions import ClientError
 
-        session = boto3.Session()
-        client = session.client("sts")
-        response = client.assume_role_with_web_identity(
-            RoleArn=role_arn,
-            RoleSessionName=os.environ.get(
-                "AWS_ROLE_SESSION_NAME", "computer-use-demo"
-            ),
-            WebIdentityToken=bearer_token,
+        logger.info(
+            "AWS_BEARER_TOKEN and AWS_ROLE_ARN are set, "
+            "attempting AssumeRoleWithWebIdentity"
         )
+        session_name = os.environ.get(
+            "AWS_ROLE_SESSION_NAME", "computer-use-demo"
+        )
+        region = os.environ.get("AWS_REGION", "us-west-2")
+
+        try:
+            session = boto3.Session()
+            sts_client = session.client("sts", region_name=region)
+            response = sts_client.assume_role_with_web_identity(
+                RoleArn=role_arn,
+                RoleSessionName=session_name,
+                WebIdentityToken=bearer_token,
+            )
+        except ClientError as e:
+            error_code = e.response["Error"]["Code"]
+            error_msg = e.response["Error"]["Message"]
+            logger.error(
+                "Bearer token auth failed: STS AssumeRoleWithWebIdentity "
+                "returned %s: %s (RoleArn=%s, SessionName=%s)",
+                error_code,
+                error_msg,
+                role_arn,
+                session_name,
+            )
+            raise
+        except Exception as e:
+            logger.error(
+                "Bearer token auth failed: unexpected error calling STS: %s: %s",
+                type(e).__name__,
+                e,
+            )
+            raise
+
         creds = response["Credentials"]
+        logger.info(
+            "Bearer token auth successful, temporary credentials obtained "
+            "(expires %s)",
+            creds.get("Expiration", "unknown"),
+        )
 
         return AnthropicBedrock(
             aws_access_key=creds["AccessKeyId"],
             aws_secret_key=creds["SecretAccessKey"],
             aws_session_token=creds["SessionToken"],
-            aws_region=os.environ.get("AWS_REGION", "us-west-2"),
+            aws_region=region,
+        )
+
+    if bearer_token and not role_arn:
+        logger.warning(
+            "AWS_BEARER_TOKEN is set but AWS_ROLE_ARN is missing — "
+            "bearer token auth requires both. Falling back to default credentials."
+        )
+    elif role_arn and not bearer_token:
+        logger.warning(
+            "AWS_ROLE_ARN is set but AWS_BEARER_TOKEN is missing — "
+            "bearer token auth requires both. Falling back to default credentials."
         )
 
     return AnthropicBedrock()
