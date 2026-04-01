@@ -3,19 +3,65 @@ import {
   RetrieveCommand,
   RetrieveCommandInput,
 } from "@aws-sdk/client-bedrock-agent-runtime";
+import {
+  fromNodeProviderChain,
+  fromWebToken,
+} from "@aws-sdk/credential-providers";
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 console.log("🔑 Have AWS AccessKey?", !!process.env.BAWS_ACCESS_KEY_ID);
 console.log("🔑 Have AWS Secret?", !!process.env.BAWS_SECRET_ACCESS_KEY);
+console.log("🔑 Have AWS Session Token?", !!process.env.BAWS_SESSION_TOKEN);
+console.log("🔑 Have AWS Bearer Token?", !!process.env.BAWS_BEARER_TOKEN);
+console.log("🔑 Have AWS Role ARN?", !!process.env.BAWS_ROLE_ARN);
 
-const bedrockClient = new BedrockAgentRuntimeClient({
-  region: "us-east-1", // Make sure this matches your Bedrock region
-  credentials: {
-    accessKeyId: process.env.BAWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.BAWS_SECRET_ACCESS_KEY!,
-  },
-});
+function createBedrockClient(): BedrockAgentRuntimeClient {
+  const region = process.env.BAWS_REGION || "us-east-1";
+
+  // Option 1: Bearer token authentication (web identity token exchanged for credentials via STS)
+  if (process.env.BAWS_BEARER_TOKEN && process.env.BAWS_ROLE_ARN) {
+    console.log("🔐 Using Bearer Token authentication (web identity)");
+    return new BedrockAgentRuntimeClient({
+      region,
+      credentials: fromWebToken({
+        roleArn: process.env.BAWS_ROLE_ARN,
+        webIdentityToken: process.env.BAWS_BEARER_TOKEN,
+        roleSessionName: process.env.BAWS_ROLE_SESSION_NAME || "bedrock-session",
+      }),
+    });
+  }
+
+  // Option 2: Static credentials (with optional session token for temporary credentials)
+  if (process.env.BAWS_ACCESS_KEY_ID && process.env.BAWS_SECRET_ACCESS_KEY) {
+    const credentials: {
+      accessKeyId: string;
+      secretAccessKey: string;
+      sessionToken?: string;
+    } = {
+      accessKeyId: process.env.BAWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.BAWS_SECRET_ACCESS_KEY,
+    };
+
+    if (process.env.BAWS_SESSION_TOKEN) {
+      credentials.sessionToken = process.env.BAWS_SESSION_TOKEN;
+      console.log("🔐 Using static credentials with session token");
+    } else {
+      console.log("🔐 Using static credentials (access key + secret key)");
+    }
+
+    return new BedrockAgentRuntimeClient({ region, credentials });
+  }
+
+  // Option 3: Default credential provider chain (IAM roles, env vars, SSO, config files, etc.)
+  console.log("🔐 Using default AWS credential provider chain");
+  return new BedrockAgentRuntimeClient({
+    region,
+    credentials: fromNodeProviderChain(),
+  });
+}
+
+const bedrockClient = createBedrockClient();
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));

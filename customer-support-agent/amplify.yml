@@ -11,6 +11,11 @@ frontend:
         - echo "KNOWLEDGE_BASE_ID=$KNOWLEDGE_BASE_ID" >> .env
         - echo "BAWS_ACCESS_KEY_ID=$BAWS_ACCESS_KEY_ID" >> .env
         - echo "BAWS_SECRET_ACCESS_KEY=$BAWS_SECRET_ACCESS_KEY" >> .env
+        - echo "BAWS_SESSION_TOKEN=$BAWS_SESSION_TOKEN" >> .env
+        - echo "BAWS_BEARER_TOKEN=$BAWS_BEARER_TOKEN" >> .env
+        - echo "BAWS_ROLE_ARN=$BAWS_ROLE_ARN" >> .env
+        - echo "BAWS_ROLE_SESSION_NAME=$BAWS_ROLE_SESSION_NAME" >> .env
+        - echo "BAWS_REGION=$BAWS_REGION" >> .env
   artifacts:
     baseDirectory: .next
     files:
